@@ -56,29 +56,37 @@ const runServer = async () => {
   });
 
   // #3
-  const emailAgent = EmailAgent({
-    defaultFromEmail: 'Aven Todos <support@aven.io>',
-    config: {
-      sendgridAPIKey: process.env.SENDGRID_API_KEY,
-    },
-  });
-  const emailAuthProvider = EmailAuthProvider({
-    agent: emailAgent,
-  });
+  const emailAgent =
+    process.env.SENDGRID_API_KEY &&
+    EmailAgent({
+      defaultFromEmail: 'Aven Todos <support@aven.io>',
+      config: {
+        sendgridAPIKey: process.env.SENDGRID_API_KEY,
+      },
+    });
+  const emailAuthProvider =
+    emailAgent &&
+    EmailAuthProvider({
+      agent: emailAgent,
+    });
 
-  const smsAgent = SMSAgent({
-    defaultFromNumber: process.env.TWILIO_FROM_NUMBER,
-    config: {
-      accountSid: process.env.TWILIO_ACCOUNT_SID,
-      authToken: process.env.TWILIO_AUTH_TOKEN,
-    },
-  });
-  const smsAuthProvider = SMSAuthProvider({
-    agent: smsAgent,
-    getMessage: (authCode, verifyInfo, accountId) => {
-      return `Todos App Auth Code: ${authCode}`;
-    },
-  });
+  const smsAgent =
+    process.env.TWILIO_ACCOUNT_SID &&
+    SMSAgent({
+      defaultFromNumber: process.env.TWILIO_FROM_NUMBER,
+      config: {
+        accountSid: process.env.TWILIO_ACCOUNT_SID,
+        authToken: process.env.TWILIO_AUTH_TOKEN,
+      },
+    });
+  const smsAuthProvider =
+    smsAgent &&
+    SMSAuthProvider({
+      agent: smsAgent,
+      getMessage: (authCode, verifyInfo, accountId) => {
+        return `Todos App Auth Code: ${authCode}`;
+      },
+    });
 
   // UNSAFE, TESTING ONLY! DELETE ME BEFORE PRODUCTION!
   const rootAuthProvider = RootAuthProvider({
@@ -87,7 +95,9 @@ const runServer = async () => {
 
   const protectedSource = createProtectedSource({
     source,
-    providers: [smsAuthProvider, emailAuthProvider, rootAuthProvider],
+    providers: [smsAuthProvider, emailAuthProvider, rootAuthProvider].filter(
+      provider => provider
+    ),
   });
 
   async function putPermission({ name, defaultRule }) {
